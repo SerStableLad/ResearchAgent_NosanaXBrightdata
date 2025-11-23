@@ -78,14 +78,14 @@ Agent: *answers directly* → "TypeScript is a strongly typed programming langua
    - You'll receive an endpoint URL (looks like: `https://xxxxx.nosana.network`)
 
 4. **Choose Your Model**
-   - Recommended: `llama3.1:8b` (fast, efficient)
+   - Default: `ollama:0.12`
    - Alternatives: `mistral`, `llama2`, `codellama`
    - Note the model name exactly as shown
 
 5. **Save Your Credentials**
    ```
    NOSANA_OLLAMA_URL=https://xxxxx.nosana.network
-   NOSANA_MODEL=llama3.1:8b
+   NOSANA_MODEL=ollama:0.12
    ```
 
 **Cost:** Free tier available, pay-as-you-go for more usage
@@ -248,7 +248,7 @@ Create `.env` file:
 ```bash
 # Nosana Configuration
 NOSANA_OLLAMA_URL=https://xxxxx.nosana.network
-NOSANA_MODEL=llama3.1:8b
+NOSANA_MODEL=ollama:0.12
 
 # BrightData Configuration
 BRIGHTDATA_API_TOKEN=your-brightdata-token-here

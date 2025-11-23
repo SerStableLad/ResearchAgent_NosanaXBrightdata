@@ -13,21 +13,30 @@ export class WebSearchTool extends Tool {
   }
 
   async _call(query: string): Promise<string> {
-    console.log(`🔍 Searching for: ${query}`);
-    
+    console.log(`📡 Initiating search request...`);
     const results = await this.scraper.searchWeb(query);
+    console.log(`📨 Search request completed`);
     
-    if (results.length === 0) {
+    // Handle raw JSON response
+    if (!results || Object.keys(results).length === 0) {
+      console.log(`📭 No results found for query: "${query}"`);
+      console.log(`❓ This could be due to:`);
+      console.log(`   • The search query returning no results from Google`);
+      console.log(`   • Issues with the BrightData API configuration`);
+      console.log(`   • Network connectivity issues`);
       return 'No results found.';
     }
 
-    let output = `Found ${results.length} results:\n\n`;
-    results.forEach((result, index) => {
-      output += `${index + 1}. ${result.title}\n`;
-      output += `   URL: ${result.url}\n`;
-      output += `   ${result.snippet}\n\n`;
-    });
-
-    return output;
+    console.log(`📬 Received raw results for query: "${query}"`);
+    
+    // Return the raw JSON as a string
+    try {
+      const jsonString = JSON.stringify(results, null, 2);
+      console.log(`📤 Returning raw JSON results (${jsonString.length} characters)`);
+      return jsonString;
+    } catch (error) {
+      console.error('❌ Failed to stringify raw results:', error);
+      return 'Error processing results.';
+    }
   }
 }
