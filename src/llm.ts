@@ -7,10 +7,8 @@ export class NosanaLLM {
   constructor(baseUrl: string, model?: string) {
     // Clean up the URL - remove trailing slashes and /api if present
     this.baseUrl = baseUrl.replace(/\/+$/, '').replace(/\/api$/, '');
-    this.model = model || String(process.env.NOSANA_MODEL);
-    
-    console.log(`🔗 Connecting to: ${this.baseUrl}`);
-    console.log(`🤖 Using model: ${this.model}`);
+    // Use environment variable with fallback to provided model or default
+    this.model = model || process.env.NOSANA_MODEL || 'ollama:0.12';
   }
 
   /**
@@ -21,88 +19,25 @@ export class NosanaLLM {
     // Use OpenAI-compatible endpoint
     const url = `${this.baseUrl}/v1/chat/completions`;
     
-    console.log(`📤 POST ${url}`);
-    
     try {
-      const response = await axios.post(
-        url,
-        {
-          model: this.model,
-          messages: [
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 1000,
-          stream: false
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 60000
-        }
-      );
+      const response = await this.makeApiCall(url, {
+        model: this.model,
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.5, // between 0 to 1. lower for more factual higher for more creative
+        max_tokens: 1000, // max token for output
+        stream: false //token streaming.. character by character 
+      });
 
       // OpenAI format response
-      return response.data.choices[0].message.content;
+      return this.parseResponse(response, 'openai');
       
     } catch (error: any) {
-      if (error.response) {
-        console.error('❌ Server Error Details:', {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          url: url,
-          data: JSON.stringify(error.response.data, null, 2)
-        });
-        
-        // If v1 endpoint doesn't work, try native Ollama
-        if (error.response.status === 404 || error.response.status === 405) {
-          console.log('⚠️  OpenAI endpoint failed, trying native Ollama format...');
-          return await this.generateNativeOllama(prompt);
-        }
-        
-        throw new Error(`Nosana API Error ${error.response.status}: ${JSON.stringify(error.response.data)}`);
-      } else if (error.request) {
-        console.error('❌ No Response from server');
-        throw new Error(`No response from Nosana: ${error.message}`);
-      } else {
-        console.error('❌ Request setup error:', error.message);
-        throw new Error(`Request failed: ${error.message}`);
-      }
-    }
-  }
-
-  /**
-   * Fallback: Try native Ollama format
-   */
-  private async generateNativeOllama(prompt: string): Promise<string> {
-    const url = `${this.baseUrl}/api/generate`;
-    
-    console.log(`📤 Trying native Ollama: POST ${url}`);
-    
-    try {
-      const response = await axios.post(
-        url,
-        {
-          model: this.model,
-          prompt: prompt,
-          stream: false
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 60000
-        }
-      );
-
-      return response.data.response;
-    } catch (error: any) {
-      console.error('❌ Native Ollama also failed:', error.message);
-      throw new Error(`Both API formats failed. Check Nosana documentation for correct endpoint.`);
+      return this.handleApiError(error, url, () => this.generateNativeOllama(prompt));
     }
   }
 
@@ -112,44 +47,92 @@ export class NosanaLLM {
   async chat(messages: Array<{ role: string; content: string }>): Promise<string> {
     const url = `${this.baseUrl}/v1/chat/completions`;
     
-    console.log(`📤 POST ${url}`);
-    
     try {
-      const response = await axios.post(
-        url,
-        {
-          model: this.model,
-          messages: messages,
-          temperature: 0.7,
-          max_tokens: 1000,
-          stream: false
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 60000
-        }
-      );
+      const response = await this.makeApiCall(url, {
+        model: this.model,
+        messages: messages,
+        temperature: 0.5,
+        max_tokens: 1000,
+        stream: false
+      });
 
-      return response.data.choices[0].message.content;
+      return this.parseResponse(response, 'openai');
       
     } catch (error: any) {
-      if (error.response) {
-        console.error('❌ Chat Error:', {
-          status: error.response.status,
-          data: JSON.stringify(error.response.data, null, 2)
-        });
-        
-        // Try native Ollama chat endpoint as fallback
-        if (error.response.status === 404 || error.response.status === 405) {
-          console.log('⚠️  Trying native Ollama chat...');
-          return await this.chatNativeOllama(messages);
-        }
-        
-        throw new Error(`Chat API Error: ${JSON.stringify(error.response.data)}`);
+      return this.handleApiError(error, url, () => this.chatNativeOllama(messages));
+    }
+  }
+
+  /**
+   * Centralized API call method
+   */
+  private async makeApiCall(url: string, data: any): Promise<any> {
+    return await axios.post(url, data, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 60000
+    });
+  }
+
+  /**
+   * Centralized response parsing
+   */
+  private parseResponse(response: any, format: 'openai' | 'ollama'): string {
+    if (format === 'openai') {
+      // Defensive check for response structure
+      if (response && response.data && response.data.choices && 
+          Array.isArray(response.data.choices) && response.data.choices.length > 0 &&
+          response.data.choices[0].message && response.data.choices[0].message.content) {
+        return response.data.choices[0].message.content;
       }
-      throw new Error(`Chat request failed: ${error.message}`);
+    } else {
+      // Ollama format
+      if (response && response.data && response.data.response) {
+        return response.data.response;
+      }
+      if (response && response.data && response.data.message && response.data.message.content) {
+        return response.data.message.content;
+      }
+    }
+    
+    throw new Error(`Invalid response format: ${JSON.stringify(response.data)}`);
+  }
+
+  /**
+   * Centralized error handling
+   */
+  private async handleApiError(error: any, url: string, fallback: () => Promise<string>): Promise<string> {
+    if (error.response) {
+      // If v1 endpoint doesn't work, try native Ollama
+      if (error.response.status === 404 || error.response.status === 405) {
+        return await fallback();
+      }
+      
+      throw new Error(`Nosana API Error ${error.response.status}: ${JSON.stringify(error.response.data)}`);
+    } else if (error.request) {
+      throw new Error(`No response from Nosana: ${error.message}`);
+    } else {
+      throw new Error(`Request failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fallback: Try native Ollama format
+   */
+  private async generateNativeOllama(prompt: string): Promise<string> {
+    const url = `${this.baseUrl}/api/generate`;
+    
+    try {
+      const response = await this.makeApiCall(url, {
+        model: this.model,
+        prompt: prompt,
+        stream: false
+      });
+
+      return this.parseResponse(response, 'ollama');
+    } catch (error: any) {
+      throw new Error(`Both API formats failed. Check Nosana documentation for correct endpoint.`);
     }
   }
 
@@ -160,68 +143,15 @@ export class NosanaLLM {
     const url = `${this.baseUrl}/api/chat`;
     
     try {
-      const response = await axios.post(
-        url,
-        {
-          model: this.model,
-          messages: messages,
-          stream: false
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 60000
-        }
-      );
+      const response = await this.makeApiCall(url, {
+        model: this.model,
+        messages: messages,
+        stream: false
+      });
 
-      return response.data.message.content;
+      return this.parseResponse(response, 'ollama');
     } catch (error: any) {
       throw new Error(`Native chat also failed: ${error.message}`);
-    }
-  }
-
-  /**
-   * Test connection to verify API is working
-   */
-  async testConnection(): Promise<boolean> {
-    console.log('🧪 Testing Nosana connection...\n');
-    
-    // Try OpenAI-compatible endpoint first
-    try {
-      console.log('1️⃣ Testing OpenAI-compatible endpoint...');
-      const url = `${this.baseUrl}/v1/models`;
-      const response = await axios.get(url, { timeout: 10000 });
-      console.log('✅ OpenAI endpoint working!');
-      console.log('📋 Available models:', response.data);
-      return true;
-    } catch (error: any) {
-      console.log('⚠️  OpenAI endpoint not available');
-    }
-    
-    // Try native Ollama endpoint
-    try {
-      console.log('2️⃣ Testing native Ollama endpoint...');
-      const url = `${this.baseUrl}/api/tags`;
-      const response = await axios.get(url, { timeout: 10000 });
-      console.log('✅ Native Ollama endpoint working!');
-      console.log('📋 Available models:', response.data);
-      return true;
-    } catch (error: any) {
-      console.log('❌ Native Ollama endpoint failed');
-    }
-    
-    // Try a simple generation test
-    try {
-      console.log('3️⃣ Testing direct generation...');
-      const result = await this.generate('Say "OK" if you can hear me');
-      console.log('✅ Generation test successful!');
-      console.log('📝 Response:', result.substring(0, 100));
-      return true;
-    } catch (error: any) {
-      console.error('❌ All connection tests failed');
-      console.error('Error:', error.message);
-      return false;
     }
   }
 }
