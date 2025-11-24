@@ -1,0 +1,805 @@
+# 🤖 Web Search AI Agent Workshop
+
+Build and deploy your own AI-powered web search agent using self-hosted LLMs, web scraping, and modern TypeScript!
+
+## 📚 What You'll Learn
+
+### Core Concepts
+- **AI Agent Architecture**: Understanding how autonomous AI agents work and make decisions
+- **LangChain Framework**: Building with one of the most popular AI orchestration frameworks
+- **Self-Hosted LLMs**: Running your own AI models without relying on OpenAI/Anthropic
+- **Web Scraping**: Extracting real-time data from the internet programmatically
+- **TypeScript Development**: Building type-safe, production-ready applications
+- **Cloud Deployment**: Deploying serverless applications with zero DevOps
+
+### Technical Skills
+- Setting up a TypeScript project from scratch
+- Integrating multiple APIs (Nosana, BrightData)
+- Creating custom LangChain tools
+- Building conversational AI agents
+- Implementing error handling and retry logic
+- Containerizing applications with Docker
+- Deploying to cloud platforms (Zeabur)
+
+### Tools & Technologies
+- **LangChain**: AI orchestration and agent framework
+- **Nosana**: Decentralized GPU network for running LLMs
+- **BrightData**: Enterprise web scraping and data collection
+- **Zeabur**: Modern deployment platform (PaaS)
+- **TypeScript**: Type-safe JavaScript development
+- **Node.js**: JavaScript runtime environment
+
+---
+
+## 🎯 Project Overview
+
+This workshop guides you through building a **Web Search AI Agent** that:
+
+1. ✅ Accepts natural language questions
+2. ✅ Determines if web search is needed
+3. ✅ Scrapes real-time data from the internet
+4. ✅ Generates intelligent answers using self-hosted LLMs
+5. ✅ Runs entirely on your own infrastructure
+
+**Example Interactions:**
+```
+User: "What's the weather in Tokyo today?"
+Agent: *searches web* → "Currently 18°C and partly cloudy in Tokyo..."
+
+User: "Who won the latest NBA championship?"
+Agent: *searches web* → "The Denver Nuggets won the 2023 NBA Championship..."
+
+User: "Who is Telsa CEO?"
+Agent: *answers directly* → "Elon Musk is the CEO of Tesla (2008–present)"
+```
+
+---
+
+## 🛠️ Prerequisites
+
+### Required Software
+
+Before starting, install these tools:
+
+1. **Node.js (v18 or higher)**
+   - Download: https://nodejs.org
+   - Verify installation: `node --version`
+   - Should show: `v18.0.0` or higher
+
+2. **Git**
+   - Download: `npm install git`
+   - Verify installation: `git --version`
+   - Should show git version
+
+3. **Code Editor**
+   - Recommended: [Cursor](https://cursor.com/download)]
+   - Alternatives: Cursor, Trae, Qoder, etc
+
+### Recommended Knowledge
+
+- ✅ Basic JavaScript/TypeScript syntax
+- ✅ Using npm and package.json
+- ✅ Running terminal commands
+- ❌ No ML/AI experience required
+- ❌ No DevOps experience required
+
+---
+
+## 📦 Tech Stack
+
+| Technology | Purpose | Why We Use It |
+|------------|---------|---------------|
+| **TypeScript** | Programming Language | Type safety, better DX, fewer bugs |
+| **LangChain** | AI Framework | Agent orchestration, tool management |
+| **Nosana** | LLM Infrastructure | Self-hosted models, cost-effective |
+| **BrightData** | Pre-built Web Scraping | Reliable data extraction, handles CAPTCHAs |
+| **Zeabur** | Hosting | Zero-config deployment, auto-scaling |
+| **Node.js** | Runtime | JavaScript on the server |
+| **Axios** | HTTP Client | API requests, promise-based |
+
+---
+
+## 🚀 Part 1: Project Setup (20 minutes)
+
+### Step 1: Create Project Directory
+
+Open your terminal and run:
+
+```bash
+# Create and navigate to project folder
+mkdir web-search-ai-agent
+cd web-search-ai-agent
+```
+
+### Step 2: Initialize Node.js Project
+
+```bash
+# Initialize npm (creates package.json)
+npm init -y
+```
+
+This creates a `package.json` file with default settings.
+
+### Step 3: Install Dependencies
+
+```bash
+# Core dependencies
+npm install @langchain/core langchain axios dotenv
+
+# Development dependencies
+npm install -D typescript @types/node tsx
+```
+
+**What each package does:**
+- `@langchain/core`: Base classes for tools and agents
+- `langchain`: Main LangChain utilities
+- `axios`: HTTP client for API requests
+- `dotenv`: Load environment variables from `.env` file
+- `typescript`: TypeScript compiler
+- `@types/node`: Type definitions for Node.js
+- `tsx`: Run TypeScript directly (development only)
+
+### Step 4: Initialize TypeScript
+
+```bash
+# Create TypeScript configuration
+npx tsc --init
+```
+
+### Step 5: Configure TypeScript
+
+Replace the contents of `tsconfig.json` with:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
+```
+
+**Key settings explained:**
+- `target: "ES2020"`: Use modern JavaScript features
+- `strict: true`: Enable strict type checking (catches bugs early)
+- `outDir: "./dist"`: Compiled JavaScript goes here
+- `rootDir: "./src"`: Source TypeScript files location
+
+### Step 6: Create Project Structure
+
+```bash
+# Create source folder
+mkdir src
+
+# Create main files
+# Agent.ts - This is the main orchestrator of the application.
+# Index.ts - This is the Application Entry Point 
+# llm.ts - This is the communication Layer with the Nosana LLM service
+# Scraper.ts -  This manages web scraping through the BrightData service:
+# Tools.ts - This bridges the gap between LangChain and the web scraper:
+
+touch src/index.ts
+touch src/llm.ts
+touch src/scraper.ts
+touch src/tools.ts
+touch src/agent.ts
+
+# Create environment file
+touch .env
+
+# Create gitignore
+touch .gitignore
+```
+
+### Step 7: Setup Git Ignore
+
+Add to `.gitignore`:
+
+```
+node_modules/
+dist/
+.env
+.DS_Store
+*.log
+```
+
+**Why ignore these?**
+- `node_modules/`: Large folder, can be recreated with `npm install`
+- `dist/`: Generated code, not source
+- `.env`: Contains secrets (API keys)
+
+### Step 8: Add NPM Scripts
+
+Update `package.json` to include these scripts:
+
+```json
+{
+  "name": "web-search-ai-agent",
+  "version": "1.0.0",
+  "description": "AI agent with web search capabilities",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": ["ai", "agent", "langchain", "typescript"],
+  "author": "Your Name",
+  "license": "MIT"
+}
+```
+
+**Scripts explained:**
+- `npm run dev`: Run TypeScript directly (fast, for development)
+- `npm run build`: Compile TypeScript to JavaScript
+- `npm start`: Run compiled JavaScript (production)
+
+---
+
+## 🧠 Part 2: Setup Nosana LLM (25 minutes)
+
+Now we'll connect to a self-hosted LLM using Nosana's GPU infrastructure.
+
+### Step 1: Create Nosana Account
+
+1. Visit: https://nosana.io
+2. Click "Sign Up" in the top right
+3. Complete registration with your email
+4. Verify your email address
+5. key in the code we sent you
+
+<img width="1468" height="706" alt="Screenshot 2025-11-24 at 5 11 07 PM" src="https://github.com/user-attachments/assets/4e102185-ea40-4978-b681-41089787d6c6" />
+
+
+### Step 2: Select and deploy your GPU
+
+1. Navigate to the **"Deploy"** section
+3. Configure your deployment by clicking on select template
+4. Select "GPT-OSS" model
+5. Base on this configuration, choose a GPU that has the highest availability, can click deploy model on the right 
+<img width="2320" height="1372" alt="image" src="https://github.com/user-attachments/assets/1ac2ef9e-96a9-4093-af3f-84848b40ada9" />
+
+### Step 3: Confirm deployment
+1. you will be bought to a **"Deployment Overview"** page, wait for the service to come online
+2. click on the Endpoint URL to confirm it's working. (if it doesn't work, repeat step 2.5 and choose a different GPU)
+3. if it work you should see the words "Ollama is running" on the next page. 
+
+<img width="1165" height="583" alt="Screenshot 2025-11-24 at 5 21 56 PM" src="https://github.com/user-attachments/assets/bcc5039c-5972-441b-8259-642608295bb1" />
+
+
+### Step 4: Store Credentials
+1. copy the URL where it says "Ollama is running"
+
+Add to your `.env` file:
+
+```bash
+# Nosana Configuration
+NOSANA_OLLAMA_URL=[Paste the URL here]/
+NOSANA_MODEL=llama3.1:8b
+```
+
+
+### Step 5: Create LLM Client
+
+Create `src/llm.ts`:
+
+```typescript
+import axios from 'axios';
+
+export class NosanaLLM {
+  private baseUrl: string;
+  private model: string;
+
+  constructor(baseUrl: string, model?: string) {
+    // Clean up the URL - remove trailing slashes and /api if present
+    this.baseUrl = baseUrl.replace(/\/+$/, '').replace(/\/api$/, '');
+    // Use environment variable with fallback to provided model or default
+    this.model = model || process.env.NOSANA_MODEL || 'ollama:0.12';
+  }
+
+  /**
+   * Generate a completion using OpenAI-compatible format
+   * This is more widely supported than native Ollama format
+   */
+  async generate(prompt: string): Promise<string> {
+    // Use OpenAI-compatible endpoint
+    const url = `${this.baseUrl}/v1/chat/completions`;
+    
+    try {
+      const response = await this.makeApiCall(url, {
+        model: this.model,
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+        stream: false
+      });
+
+      // OpenAI format response
+      return this.parseResponse(response, 'openai');
+      
+    } catch (error: any) {
+      return this.handleApiError(error, url, () => this.generateNativeOllama(prompt));
+    }
+  }
+
+  /**
+   * Chat with conversation history
+   */
+  async chat(messages: Array<{ role: string; content: string }>): Promise<string> {
+    const url = `${this.baseUrl}/v1/chat/completions`;
+    
+    try {
+      const response = await this.makeApiCall(url, {
+        model: this.model,
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 1000,
+        stream: false
+      });
+
+      return this.parseResponse(response, 'openai');
+      
+    } catch (error: any) {
+      return this.handleApiError(error, url, () => this.chatNativeOllama(messages));
+    }
+  }
+
+  /**
+   * Centralized API call method
+   */
+  private async makeApiCall(url: string, data: any): Promise<any> {
+    return await axios.post(url, data, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 60000
+    });
+  }
+
+  /**
+   * Centralized response parsing
+   */
+  private parseResponse(response: any, format: 'openai' | 'ollama'): string {
+    if (format === 'openai') {
+      // Defensive check for response structure
+      if (response && response.data && response.data.choices && 
+          Array.isArray(response.data.choices) && response.data.choices.length > 0 &&
+          response.data.choices[0].message && response.data.choices[0].message.content) {
+        return response.data.choices[0].message.content;
+      }
+    } else {
+      // Ollama format
+      if (response && response.data && response.data.response) {
+        return response.data.response;
+      }
+      if (response && response.data && response.data.message && response.data.message.content) {
+        return response.data.message.content;
+      }
+    }
+    
+    throw new Error(`Invalid response format: ${JSON.stringify(response.data)}`);
+  }
+
+  /**
+   * Centralized error handling
+   */
+  private async handleApiError(error: any, url: string, fallback: () => Promise<string>): Promise<string> {
+    if (error.response) {
+      // If v1 endpoint doesn't work, try native Ollama
+      if (error.response.status === 404 || error.response.status === 405) {
+        return await fallback();
+      }
+      
+      throw new Error(`Nosana API Error ${error.response.status}: ${JSON.stringify(error.response.data)}`);
+    } else if (error.request) {
+      throw new Error(`No response from Nosana: ${error.message}`);
+    } else {
+      throw new Error(`Request failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fallback: Try native Ollama format
+   */
+  private async generateNativeOllama(prompt: string): Promise<string> {
+    const url = `${this.baseUrl}/api/generate`;
+    
+    try {
+      const response = await this.makeApiCall(url, {
+        model: this.model,
+        prompt: prompt,
+        stream: false
+      });
+
+      return this.parseResponse(response, 'ollama');
+    } catch (error: any) {
+      throw new Error(`Both API formats failed. Check Nosana documentation for correct endpoint.`);
+    }
+  }
+
+  /**
+   * Fallback: Native Ollama chat
+   */
+  private async chatNativeOllama(messages: Array<{ role: string; content: string }>): Promise<string> {
+    const url = `${this.baseUrl}/api/chat`;
+    
+    try {
+      const response = await this.makeApiCall(url, {
+        model: this.model,
+        messages: messages,
+        stream: false
+      });
+
+      return this.parseResponse(response, 'ollama');
+    } catch (error: any) {
+      throw new Error(`Native chat also failed: ${error.message}`);
+    }
+  }
+}
+```
+
+**Key concepts:**
+- **`generate()`**: Single prompt → single response
+- **`chat()`**: Conversation with context/history
+- **Error handling**: Try-catch blocks prevent crashes
+- **Timeout**: 60 seconds max wait time
+- ** temperature**: between 0 to 1. lower for more factual higher for more creative
+- ** max_tokens**: max token for output/input. to limit the gpu usage
+- ** stream**: token streaming. character by character - this does not work for terminal 
+
+### Step 6: Test Your LLM Connection  --> WIP 
+run `npm run dev` in the terminal 
+you should see
+
+---
+
+## 🌐 Part 3: Setup BrightData Scraper (25 minutes)
+
+Now we'll add web scraping capabilities using BrightData.
+
+### Step 1: Create BrightData Account
+
+1. Visit:   ⁠https://get.brightdata.com/aibuilders10 
+2. Click **"Start Free Trial"** or **"Get Started"**
+3. Register with your email (business email preferred)
+
+### Step 2: Access Dashboard
+
+1. Log in to: https://brightdata.com/cp
+2. Navigate to **"Web Access --> Web Access API --> create API"**
+   <img width="1470" height="521" alt="Screenshot 2025-11-24 at 7 26 16 PM" src="https://github.com/user-attachments/assets/65bed564-c111-4f9f-bea9-1562fb63f1b8" />
+3. Select **"SERP API"** and create the API
+<img width="1363" height="711" alt="Screenshot 2025-11-24 at 7 29 27 PM" src="https://github.com/user-attachments/assets/93b7383a-dd3b-402f-b4b5-92741f057fb9" />
+
+### Step 3:  Store BrightData Credentials
+1. Copy the API from the playground 
+<img width="1365" height="474" alt="Screenshot 2025-11-24 at 7 32 24 PM" src="https://github.com/user-attachments/assets/5c7cc184-160a-480c-9dc4-f64aece857f8" />
+
+2. Add to your `.env` file:
+
+```bash
+# BrightData Configuration
+BRIGHTDATA_API_TOKEN= [API here]
+```
+
+
+
+### Step 6: Create Scraper Class
+
+Create `src/scraper.ts`:
+
+```typescript
+import axios from 'axios';
+
+export interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+export class BrightDataScraper {
+  private apiToken: string;
+  private baseUrl = 'https://api.brightdata.com';
+  private zone: string;
+
+  constructor(apiToken: string, zone: string = 'serp_api1') {
+    this.apiToken = apiToken;
+    this.zone = zone;
+  }
+
+  async searchWeb(query: string, limit: number = 5): Promise<SearchResult[]> {
+    try {
+      console.log(`🔍 Searching for: "${query}"`);
+      
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=en&gl=us`;
+      
+      const response = await axios.post(
+        `${this.baseUrl}/request`,
+        {
+          zone: this.zone,
+          url: searchUrl,
+          format: 'json'
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiToken}`,
+            'Content-Type': 'application/json'
+          },
+          params: {
+            brd_json: 1
+          }
+        }
+      );
+
+      console.log(`✅ BrightData returned results`);
+      
+      return this.formatRawResults(response.data);
+      
+    } catch (error: any) {
+      console.error('❌ BrightData Error:', error.response?.status || error.message);
+      
+      if (error.response?.status === 401) {
+        console.error('   Check your BRIGHTDATA_API_TOKEN in .env');
+      } else if (error.response?.status === 403) {
+        console.error('   Check your zone configuration and permissions');
+      }
+      
+      return [];
+    }
+  }
+
+  /**
+   * Format raw BrightData response
+   * We pass raw data to the LLM - it's smart enough to parse it!
+   */
+  private formatRawResults(data: any): SearchResult[] {
+    if (!data) {
+      return [];
+    }
+
+    // Convert to string for LLM processing
+    const dataString = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    
+    // Return as single result containing all data
+    return [{
+      title: 'Search Results',
+      url: 'https://www.google.com',
+      snippet: dataString.substring(0, 5000) // Limit to avoid token limits
+    }];
+  }
+}
+```
+
+**Why this approach?**
+- ✅ Flexible: Works with any BrightData response format
+- ✅ Smart: Let the LLM extract what it needs from raw data
+
+
+## 🛠️ Part 4: Create LangChain Tool (15 minutes)
+
+Now we'll wrap our scraper in a LangChain Tool so the agent can use it.
+
+### Step 1: Create Tool Class
+
+Create `src/tools.ts`:
+
+```typescript
+import { Tool } from '@langchain/core/tools';
+import { BrightDataScraper } from './scraper';
+
+export class WebSearchTool extends Tool {
+  name = 'web_search';
+  description = 'Useful for searching the web for current information. Input should be a search query string.';
+  
+  private scraper: BrightDataScraper;
+
+  constructor(scraper: BrightDataScraper) {
+    super();
+    this.scraper = scraper;
+  }
+
+  async _call(query: string): Promise<string> {
+    console.log(`🔍 Searching for: ${query}`);
+    
+    const results = await this.scraper.searchWeb(query);
+    
+    if (results.length === 0) {
+      return 'No search results found. The web search failed or returned no data.';
+    }
+
+    // Return raw data for LLM to parse
+    return `Web search results for "${query}":\n\n${results[0].snippet}`;
+  }
+}
+```
+
+**Understanding LangChain Tools:**
+- **`name`**: Tool identifier (the AI sees this)
+- **`description`**: How the AI decides when to use it
+- **`_call()`**: What happens when the tool is invoked
+- **`super()`**: Calls parent Tool class constructor
+
+**Why `_call()` with underscore?**
+- `_call()`: Internal implementation (we write this)
+- `invoke()`: Public method (LangChain provides automatically)
+
+---
+
+## 🤖 Part 5: Build the AI Agent (30 minutes)
+
+This is where everything comes together!
+
+### Step 1: Create Agent Class
+
+Create `src/agent.ts`:
+
+```typescript
+import { NosanaLLM } from './llm';
+import { WebSearchTool } from './tools';
+import { BrightDataScraper } from './scraper';
+
+export class WebSearchAgent {
+  private llm: NosanaLLM;
+  private searchTool: WebSearchTool;
+
+  constructor(nosanaUrl: string, brightdataToken: string, brightdataZone?: string) {
+    this.llm = new NosanaLLM(nosanaUrl);
+    const scraper = new BrightDataScraper(
+      brightdataToken,
+      brightdataZone || 'serp_api1'
+    );
+    this.searchTool = new WebSearchTool(scraper);
+  }
+
+  /**
+   * Main agent execution flow
+   */
+  async run(userQuery: string): Promise<string> {
+    console.log(`\n💭 User Query: ${userQuery}\n`);
+
+    // Step 1: Decide if search is needed
+    const needsSearch = await this.shouldSearch(userQuery);
+    
+    if (!needsSearch) {
+      console.log('📝 Answering directly without search...');
+      return await this.llm.generate(userQuery);
+    }
+
+    // Step 2: Extract search query
+    console.log('🤔 Determining what to search for...');
+    const searchQuery = await this.extractSearchQuery(userQuery);
+    
+    // Step 3: Perform web search
+    const searchResults = await this.searchTool._call(searchQuery);
+    
+    // Step 4: Generate final answer
+    console.log('🧠 Generating answer from search results...');
+    const finalAnswer = await this.generateAnswer(userQuery, searchResults);
+    
+    return finalAnswer;
+  }
+
+  /**
+   * Determine if web search is needed
+   */
+  private async shouldSearch(query: string): Promise<boolean> {
+    const prompt = `Does this question require searching the web for current information? Answer only YES or NO.
+    
+Question: ${query}
+
+Answer:`;
+
+    const response = await this.llm.generate(prompt);
+    return response.toLowerCase().includes('yes');
+  }
+
+  /**
+   * Extract concise search query from user question
+   */
+  private async extractSearchQuery(query: string): Promise<string> {
+    const prompt = `Extract a concise search query (3-6 words) from this question:
+
+Question: ${query}
+
+Search query:`;
+
+    const response = await this.llm.generate(prompt);
+    return response.trim();
+  }
+
+  /**
+   * Generate final answer using search results
+   */
+  private async generateAnswer(originalQuery: string, searchResults: string): Promise<string> {
+    const prompt = `Based on the following search results, answer the user's question accurately and concisely.
+
+User Question: ${originalQuery}
+
+Search Results:
+${searchResults}
+
+Answer:`;
+
+    return await this.llm.chat([
+      { 
+        role: 'system', 
+        content: 'You are a helpful AI assistant that answers questions based on search results. Be concise and accurate.' 
+      },
+      { 
+        role: 'user', 
+        content: prompt 
+      }
+    ]);
+  }
+}
+```
+
+**Agent Flow Explained:**
+
+```
+User: "What's the weather in Tokyo?"
+         ↓
+    shouldSearch() 
+    → YES (needs current data)
+         ↓
+    extractSearchQuery()
+    → "Tokyo weather today"
+         ↓
+    searchTool._call()
+    → [web results]
+         ↓
+    generateAnswer()
+    → "Currently 18°C and partly cloudy..."
+```
+
+**Why this architecture?**
+1. **Modular**: Each method has one job
+2. **Testable**: Can test each step independently
+3. **Flexible**: Easy to add more tools or change logic
+4. **Observable**: Console logs show what's happening
+
+---
+
+## 🚀 Part 6: Deploy to Zeabur (15 minutes)
+
+Now let's deploy your agent to the cloud!
+
+### Step 1: Create Zeabur Account
+
+### Step 4: Deploy on Zeabur
+
+1. Go to https://dash.zeabur.com
+2. Click **"New Project"**
+3. Choose **"Deploy from Git"**
+4. Select your repository: `web-search-ai-agent`
+5. Zeabur auto-detects the Dockerfile ✨
+6. Click **"Deploy"**
+
+
+
+### Step 6: Access Your Agent
+
+Your agent is now live! Zeabur provides a URL like:
+```
+https://web-search-ai-agent-xxxxx.zeabur.app
+```
+
+**Note**: For CLI agents, you'd typically access via SSH or convert to an API (see bonus section below).
+
+---
