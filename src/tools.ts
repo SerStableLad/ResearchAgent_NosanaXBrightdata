@@ -13,16 +13,25 @@ export class WebSearchTool extends Tool {
   }
 
   async _call(query: string): Promise<string> {
-    console.log(`📡 Initiating search request...`);
-    const results = await this.scraper.searchWeb(query);
-    console.log(`📨 Search request completed`);
+    console.log(`📡 Initiating search request for query: "${query}"`);
+    
+    // Validate input query
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+      console.error('❌ Invalid search query provided to WebSearchTool:', query);
+      return 'Error: Invalid search query provided.';
+    }
+    
+    const trimmedQuery = query.trim();
+    const results = await this.scraper.searchWeb(trimmedQuery);
+    console.log(`📨 Search request completed for query: "${trimmedQuery}"`);
     
     // Handle raw JSON response
     if (!results || Object.keys(results).length === 0) {
+      console.warn('⚠️ No results found for query:', trimmedQuery);
       return 'No results found.';
     }
 
-    console.log(`📬 Received raw results for query: "${query}"`);
+    console.log(`📬 Received raw results for query: "${trimmedQuery}"`);
     
     // Return the raw JSON as a string
     try {

@@ -69,7 +69,7 @@ Agent: *answers directly* → "TypeScript is a strongly typed programming langua
    - Verify your email
 
 2. **Access Dashboard**
-   - Log in to https://nosana.io/dashboard
+   - Log in to [https://dashboard.nosana.com/]
    - Navigate to the "Products" or "API" section
 
 3. **Activate Ollama API**

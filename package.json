@@ -3,15 +3,17 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "dev": "tsx src/server.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "server": "tsx src/server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/express": "^5.0.0",
     "@types/node": "^24.10.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
@@ -20,6 +22,8 @@
     "@langchain/core": "^1.0.5",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
-    "langchain": "^1.0.4"
+    "express": "^4.21.1",
+    "langchain": "^1.0.4",
+    "openai": "^6.9.1"
   }
 }

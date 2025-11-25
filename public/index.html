@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Search AI Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #1a2a6c;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        #queryInput {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        #queryInput:focus {
+            outline: none;
+            border-color: #1a2a6c;
+        }
+        
+        #submitBtn {
+            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        #submitBtn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        #submitBtn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 1;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #1a2a6c;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .result-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: left;
+            min-height: 100px;
+            display: none;
+        }
+        
+        .result-container h2 {
+            color: #1a2a6c;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        #result {
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+        }
+        
+        .error {
+            color: #b21f1f;
+            background-color: #ffe6e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .history {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .history h2 {
+            color: #1a2a6c;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .history-item {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .history-query {
+            font-weight: bold;
+            color: #1a2a6c;
+            margin-bottom: 5px;
+        }
+        
+        .history-answer {
+            color: #333;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .input-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Web Search AI Agent</h1>
+        <p class="subtitle">Ask anything and get real-time answers from the web</p>
+        
+        <div class="input-container">
+            <input type="text" id="queryInput" placeholder="Ask me anything..." autocomplete="off">
+            <button id="submitBtn">Ask</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Searching the web and generating your answer...</p>
+        </div>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="result-container" id="resultContainer">
+            <h2>Answer:</h2>
+            <div id="result"></div>
+        </div>
+        
+        <div class="history" id="historyContainer">
+            <h2>Recent Queries</h2>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        const queryInput = document.getElementById('queryInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingElement = document.getElementById('loading');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultElement = document.getElementById('result');
+        const errorElement = document.getElementById('error');
+        const historyList = document.getElementById('historyList');
+        const historyContainer = document.getElementById('historyContainer');
+        
+        // Store query history
+        let queryHistory = [];
+        
+        // Handle form submission
+        submitBtn.addEventListener('click', handleSubmit);
+        queryInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSubmit();
+            }
+        });
+        
+        async function handleSubmit() {
+            const query = queryInput.value.trim();
+            
+            if (!query) {
+                showError('Please enter a question');
+                return;
+            }
+            
+            // Clear previous results and errors
+            hideError();
+            resultContainer.style.display = 'none';
+            
+            // Show loading indicator
+            loadingElement.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            try {
+                // Send query to the backend
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to get response');
+                }
+                
+                // Display result
+                resultElement.textContent = data.answer;
+                resultContainer.style.display = 'block';
+                
+                // Add to history
+                addToHistory(query, data.answer);
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'An error occurred while processing your request');
+            } finally {
+                // Hide loading indicator
+                loadingElement.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+        
+        function showError(message) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        function hideError() {
+            errorElement.style.display = 'none';
+        }
+        
+        function addToHistory(query, answer) {
+            // Add to beginning of history
+            queryHistory.unshift({ query, answer });
+            
+            // Limit history to 5 items
+            if (queryHistory.length > 5) {
+                queryHistory.pop();
+            }
+            
+            // Update history display
+            updateHistoryDisplay();
+        }
+        
+        function updateHistoryDisplay() {
+            if (queryHistory.length === 0) {
+                historyContainer.style.display = 'none';
+                return;
+            }
+            
+            historyContainer.style.display = 'block';
+            historyList.innerHTML = '';
+            
+            queryHistory.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                historyItem.innerHTML = `
+                    <div class="history-query">${item.query}</div>
+                    <div class="history-answer">${item.answer}</div>
+                `;
+                
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        // Initialize
+        updateHistoryDisplay();
+    </script>
+</body>
+</html>
