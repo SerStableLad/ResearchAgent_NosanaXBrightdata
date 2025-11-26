@@ -463,34 +463,6 @@ export class NosanaLLM {
 - ** max_tokens**: max token for output/input. to limit the gpu usage
 - ** stream**: token streaming. character by character - this does not work for terminal 
 
-Create `src/agent.ts`:
-
-```typescript
-import { NosanaLLM } from './llm';
-
-export class WebSearchAgent {
-  private llm: NosanaLLM;
-
-  constructor(nosanaUrl: string, brightdataToken: string, model?: string) {
-    this.llm = new NosanaLLM(nosanaUrl, model);
-  }
-
-  async run(userQuery: string): Promise<string> {
-    console.log(`\n💭 User Query: ${userQuery}\n`);
-    
-    // Validate input
-    if (!userQuery || typeof userQuery !== 'string' || userQuery.trim().length === 0) {
-      console.error('❌ Invalid user query provided to WebSearchAgent:', userQuery);
-      return 'Error: Invalid query provided.';
-    }
-
-    // Always answer directly without search (tools disabled)
-    console.log('📝 Answering directly without search (tools disabled)...');
-    return await this.llm.generate(userQuery);
-  
-  }
-}
-```
 
 Create `src/agent.ts`:
 
