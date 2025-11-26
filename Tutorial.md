@@ -191,7 +191,7 @@ mkdir src
 
 touch src/index.ts
 touch src/llm.ts
-touch src/scraper.ts
+touch src/tools/scraper.ts
 touch src/tools.ts
 touch src/agent.ts
 
@@ -279,7 +279,7 @@ Now we'll connect to a self-hosted LLM using Nosana's GPU infrastructure.
 
 
 ### Step 4: Store Credentials
-1. copy the URL where it says "Ollama is running"
+copy the URL where it says "Ollama is running"
 
 Add to your `.env` file:
 
@@ -463,9 +463,171 @@ export class NosanaLLM {
 - ** max_tokens**: max token for output/input. to limit the gpu usage
 - ** stream**: token streaming. character by character - this does not work for terminal 
 
-### Step 6: Test Your LLM Connection  --> WIP 
+Create `src/agent.ts`:
+
+```typescript
+import { NosanaLLM } from './llm';
+
+export class WebSearchAgent {
+  private llm: NosanaLLM;
+
+  constructor(nosanaUrl: string, brightdataToken: string, model?: string) {
+    this.llm = new NosanaLLM(nosanaUrl, model);
+  }
+
+  async run(userQuery: string): Promise<string> {
+    console.log(`\n💭 User Query: ${userQuery}\n`);
+    
+    // Validate input
+    if (!userQuery || typeof userQuery !== 'string' || userQuery.trim().length === 0) {
+      console.error('❌ Invalid user query provided to WebSearchAgent:', userQuery);
+      return 'Error: Invalid query provided.';
+    }
+
+    // Always answer directly without search (tools disabled)
+    console.log('📝 Answering directly without search (tools disabled)...');
+    return await this.llm.generate(userQuery);
+  
+  }
+}
+```
+
+Create `src/agent.ts`:
+
+```typescript
+import { NosanaLLM } from './llm';
+// import { WebSearchTool } from './tools';
+// import { BrightDataScraper } from './Tools/scraper';
+
+export class WebSearchAgent {
+  private llm: NosanaLLM;
+  // private searchTool: WebSearchTool;
+
+  constructor(nosanaUrl: string, brightdataToken: string, model?: string) {
+    this.llm = new NosanaLLM(nosanaUrl, model);
+    // const scraper = new BrightDataScraper(brightdataToken);
+    // this.searchTool = new WebSearchTool(scraper);
+  }
+
+  async run(userQuery: string): Promise<string> {
+    console.log(`\n💭 User Query: ${userQuery}\n`);
+    
+    // Validate input
+    if (!userQuery || typeof userQuery !== 'string' || userQuery.trim().length === 0) {
+      console.error('❌ Invalid user query provided to WebSearchAgent:', userQuery);
+      return 'Error: Invalid query provided.';
+    }
+
+    
+    // Always answer directly without search (tools disabled)
+    console.log('📝 Answering directly without search (tools disabled)...');
+    return await this.llm.generate(userQuery);
+
+
+//     // Step 1: Determine if we need to search
+//     const needsSearch = await this.shouldSearch(userQuery);
+//     console.log(`💡 Search needed: ${needsSearch ? 'YES' : 'NO'}`);
+    
+//     if (!needsSearch) {
+//       console.log('📝 Answering directly without search...');
+//       return await this.llm.generate(userQuery);
+//     }
+
+//     // Step 2: Extract search query
+//     console.log('🔍 Determining what to search for...');
+//     const searchQuery = await this.extractSearchQuery(userQuery);
+//     console.log(`🔑 Extracted search query: "${searchQuery}"`);
+    
+//     // Validate the extracted search query
+//     if (!searchQuery || typeof searchQuery !== 'string' || searchQuery.trim().length === 0) {
+//       console.error('❌ Invalid search query extracted:', searchQuery);
+//       return 'Error: Could not extract a valid search query.';
+//     }
+    
+//     // Step 3: Perform web search
+//     console.log(`🚀 Executing web search...`);
+//     const searchResults = await this.searchTool._call(searchQuery.trim());
+//     console.log(`🏁 Web search completed`);
+    
+//     // Log the raw search results for debugging
+//     console.log(`📄 Raw search results preview: ${searchResults.substring(0, 100)}...`);
+    
+//     // Step 4: Generate answer based on search results
+//     console.log('🧠 Generating answer from search results...');
+//     const finalAnswer = await this.generateAnswer(userQuery, searchResults);
+//     return finalAnswer;
+//   }
+
+//   private async shouldSearch(query: string): Promise<boolean> {
+//     console.log(`📋 Evaluating if search is needed for: "${query}"`);
+    
+//     const prompt = `Does this question require searching the web for current information? Answer only YES or NO.
+    
+// Question: ${query}
+
+// Answer:`;
+
+//     const response = await this.llm.generate(prompt);
+    
+//     const result = response.toLowerCase().includes('yes');
+//     console.log(`📊 Evaluation result: ${result ? 'SEARCH REQUIRED' : 'DIRECT ANSWER'}`);
+    
+//     return result;
+//   }
+
+//   private async extractSearchQuery(query: string): Promise<string> {
+//     console.log(`📋 Extracting search query from: "${query}"`);
+    
+//     const prompt = `Extract a concise search query (3-6 words) from this question:
+
+// Question: ${query}
+
+// Search query:`;
+
+//     console.log(`📤 Sending extraction prompt to LLM...`);
+//     const response = await this.llm.generate(prompt);
+//     console.log(`📥 Received LLM response: "${response}"`);
+    
+//     const result = response.trim();
+//     console.log(`🔑 Final extracted search query: "${result}"`);
+    
+//     return result;
+//   }
+
+//   private async generateAnswer(originalQuery: string, searchResults: string): Promise<string> {
+//     console.log(`📋 Generating final answer for: "${originalQuery}"`);
+//     console.log(`📎 With search results length: ${searchResults.length} characters`);
+    
+//     // Check if we have an error message instead of results
+//     if (searchResults.startsWith('Error:') || searchResults === 'No results found.') {
+//       console.warn('⚠️ Search returned an error or no results');
+//       return `I couldn't find information about "${originalQuery}" due to a search error. Please try rephrasing your question.`;
+//     }
+    
+//     const prompt = `Based on the following search results, answer the user's question accurately and concisely.
+
+// User Question: ${originalQuery}
+
+// Search Results:
+// ${searchResults}
+
+// Answer:`;
+
+//     const result = await this.llm.chat([
+//       { role: 'system', content: 'You are a helpful AI assistant that answers questions based on search results. Be concise and accurate.' },
+//       { role: 'user', content: prompt }
+//     ]);
+    
+//     console.log(`📥 Received final answer from LLM (${result.length} characters)`);
+    
+//     return result;
+  }
+}
+```
+
+### Step 6: Test Your LLM Connection
 run `npm run dev` in the terminal 
-you should see
+try asking it questions.
 
 ---
 
@@ -645,110 +807,126 @@ export class WebSearchTool extends Tool {
 
 This is where everything comes together!
 
-### Step 1: Create Agent Class
+### Step 1: edit the Agent Class 
 
-Create `src/agent.ts`:
+Remove / comment this in `src/agent.ts`:
 
 ```typescript
-import { NosanaLLM } from './llm';
-import { WebSearchTool } from './tools';
-import { BrightDataScraper } from './scraper';
-
-export class WebSearchAgent {
-  private llm: NosanaLLM;
-  private searchTool: WebSearchTool;
-
-  constructor(nosanaUrl: string, brightdataToken: string, brightdataZone?: string) {
-    this.llm = new NosanaLLM(nosanaUrl);
-    const scraper = new BrightDataScraper(
-      brightdataToken,
-      brightdataZone || 'serp_api1'
-    );
-    this.searchTool = new WebSearchTool(scraper);
-  }
-
-  /**
-   * Main agent execution flow
-   */
-  async run(userQuery: string): Promise<string> {
-    console.log(`\n💭 User Query: ${userQuery}\n`);
-
-    // Step 1: Decide if search is needed
-    const needsSearch = await this.shouldSearch(userQuery);
-    
-    if (!needsSearch) {
-      console.log('📝 Answering directly without search...');
-      return await this.llm.generate(userQuery);
-    }
-
-    // Step 2: Extract search query
-    console.log('🤔 Determining what to search for...');
-    const searchQuery = await this.extractSearchQuery(userQuery);
-    
-    // Step 3: Perform web search
-    const searchResults = await this.searchTool._call(searchQuery);
-    
-    // Step 4: Generate final answer
-    console.log('🧠 Generating answer from search results...');
-    const finalAnswer = await this.generateAnswer(userQuery, searchResults);
-    
-    return finalAnswer;
-  }
-
-  /**
-   * Determine if web search is needed
-   */
-  private async shouldSearch(query: string): Promise<boolean> {
-    const prompt = `Does this question require searching the web for current information? Answer only YES or NO.
-    
-Question: ${query}
-
-Answer:`;
-
-    const response = await this.llm.generate(prompt);
-    return response.toLowerCase().includes('yes');
-  }
-
-  /**
-   * Extract concise search query from user question
-   */
-  private async extractSearchQuery(query: string): Promise<string> {
-    const prompt = `Extract a concise search query (3-6 words) from this question:
-
-Question: ${query}
-
-Search query:`;
-
-    const response = await this.llm.generate(prompt);
-    return response.trim();
-  }
-
-  /**
-   * Generate final answer using search results
-   */
-  private async generateAnswer(originalQuery: string, searchResults: string): Promise<string> {
-    const prompt = `Based on the following search results, answer the user's question accurately and concisely.
-
-User Question: ${originalQuery}
-
-Search Results:
-${searchResults}
-
-Answer:`;
-
-    return await this.llm.chat([
-      { 
-        role: 'system', 
-        content: 'You are a helpful AI assistant that answers questions based on search results. Be concise and accurate.' 
-      },
-      { 
-        role: 'user', 
-        content: prompt 
-      }
-    ]);
-  }
-}
+    // Always answer directly without search (tools disabled) 
+    console.log('📝 Answering directly without search (tools disabled)...');
+    return await this.llm.generate(userQuery);
 ```
+
+Add in / uncomment this in `src/agent.ts`:
+
+```typescript
+      // Step 1: Determine if we need to search
+//     const needsSearch = await this.shouldSearch(userQuery);
+//     console.log(`💡 Search needed: ${needsSearch ? 'YES' : 'NO'}`);
+    
+//     if (!needsSearch) {
+//       console.log('📝 Answering directly without search...');
+//       return await this.llm.generate(userQuery);
+//     }
+
+//     // Step 2: Extract search query
+//     console.log('🔍 Determining what to search for...');
+//     const searchQuery = await this.extractSearchQuery(userQuery);
+//     console.log(`🔑 Extracted search query: "${searchQuery}"`);
+    
+//     // Validate the extracted search query
+//     if (!searchQuery || typeof searchQuery !== 'string' || searchQuery.trim().length === 0) {
+//       console.error('❌ Invalid search query extracted:', searchQuery);
+//       return 'Error: Could not extract a valid search query.';
+//     }
+    
+//     // Step 3: Perform web search
+//     console.log(`🚀 Executing web search...`);
+//     const searchResults = await this.searchTool._call(searchQuery.trim());
+//     console.log(`🏁 Web search completed`);
+    
+//     // Log the raw search results for debugging
+//     console.log(`📄 Raw search results preview: ${searchResults.substring(0, 100)}...`);
+    
+//     // Step 4: Generate answer based on search results
+//     console.log('🧠 Generating answer from search results...');
+//     const finalAnswer = await this.generateAnswer(userQuery, searchResults);
+//     return finalAnswer;
+//   }
+
+//   private async shouldSearch(query: string): Promise<boolean> {
+//     console.log(`📋 Evaluating if search is needed for: "${query}"`);
+    
+//     const prompt = `Does this question require searching the web for current information? Answer only YES or NO.
+    
+// Question: ${query}
+
+// Answer:`;
+
+//     const response = await this.llm.generate(prompt);
+    
+//     const result = response.toLowerCase().includes('yes');
+//     console.log(`📊 Evaluation result: ${result ? 'SEARCH REQUIRED' : 'DIRECT ANSWER'}`);
+    
+//     return result;
+//   }
+
+//   private async extractSearchQuery(query: string): Promise<string> {
+//     console.log(`📋 Extracting search query from: "${query}"`);
+    
+//     const prompt = `Extract a concise search query (3-6 words) from this question:
+
+// Question: ${query}
+
+// Search query:`;
+
+//     console.log(`📤 Sending extraction prompt to LLM...`);
+//     const response = await this.llm.generate(prompt);
+//     console.log(`📥 Received LLM response: "${response}"`);
+    
+//     const result = response.trim();
+//     console.log(`🔑 Final extracted search query: "${result}"`);
+    
+//     return result;
+//   }
+
+//   private async generateAnswer(originalQuery: string, searchResults: string): Promise<string> {
+//     console.log(`📋 Generating final answer for: "${originalQuery}"`);
+//     console.log(`📎 With search results length: ${searchResults.length} characters`);
+    
+//     // Check if we have an error message instead of results
+//     if (searchResults.startsWith('Error:') || searchResults === 'No results found.') {
+//       console.warn('⚠️ Search returned an error or no results');
+//       return `I couldn't find information about "${originalQuery}" due to a search error. Please try rephrasing your question.`;
+//     }
+    
+//     const prompt = `Based on the following search results, answer the user's question accurately and concisely.
+
+// User Question: ${originalQuery}
+
+// Search Results:
+// ${searchResults}
+
+// Answer:`;
+
+//     const result = await this.llm.chat([
+//       { role: 'system', content: 'You are a helpful AI assistant that answers questions based on search results. Be concise and accurate.' },
+//       { role: 'user', content: prompt }
+//     ]);
+    
+//     console.log(`📥 Received final answer from LLM (${result.length} characters)`);
+    
+//     return result;
+```
+
+
+
+### Step 2: edit the index Class 
+add in / uncomment this on line 15 in `src/index.ts`
+```
+const brightdataToken = process.env.BRIGHTDATA_API_TOKEN;
+```
+
 
 **Agent Flow Explained:**
 
@@ -776,7 +954,412 @@ User: "What's the weather in Tokyo?"
 
 ---
 
-## 🚀 Part 6: Deploy to Zeabur (15 minutes)
+### Step 3: run `npm run dev` in terminal to test it out
+
+## Part 6: built a simple UI (5 min)
+
+### Step 1: Wrap your terminal app in a API call
+
+create a simple `server.ts`
+```typescript
+import express from 'express';
+import dotenv from 'dotenv';
+import path from 'path';
+import { WebSearchAgent } from './agent';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Initialize the agent
+const nosanaUrl = process.env.NOSANA_OLLAMA_URL;
+const brightdataToken = process.env.BRIGHTDATA_API_TOKEN;
+
+if (!nosanaUrl || !brightdataToken) {
+  console.error('❌ Missing environment variables! Check your .env file.');
+  process.exit(1);
+}
+
+const agent = new WebSearchAgent(nosanaUrl, brightdataToken);
+
+// API endpoint for handling queries
+app.post('/api/query', async (req, res) => {
+  try {
+    const { query } = req.body;
+    
+    if (!query) {
+      return res.status(400).json({ error: 'Query is required' });
+    }
+    
+    console.log(`Received query: ${query}`);
+    
+    const answer = await agent.run(query);
+    res.json({ answer });
+  } catch (error: any) {
+    console.error('Error processing query:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Serve the frontend
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Web Search AI Agent Server running on http://localhost:${PORT}`);
+});
+```
+
+### step 2: create a simple frontend 
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Search AI Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #1a2a6c;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        #queryInput {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        #queryInput:focus {
+            outline: none;
+            border-color: #1a2a6c;
+        }
+        
+        #submitBtn {
+            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        #submitBtn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        #submitBtn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 1;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #1a2a6c;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .result-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: left;
+            min-height: 100px;
+            display: none;
+        }
+        
+        .result-container h2 {
+            color: #1a2a6c;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        #result {
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+        }
+        
+        .error {
+            color: #b21f1f;
+            background-color: #ffe6e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .history {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .history h2 {
+            color: #1a2a6c;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .history-item {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .history-query {
+            font-weight: bold;
+            color: #1a2a6c;
+            margin-bottom: 5px;
+        }
+        
+        .history-answer {
+            color: #333;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .input-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Web Search AI Agent</h1>
+        <p class="subtitle">Ask anything and get real-time answers from the web</p>
+        
+        <div class="input-container">
+            <input type="text" id="queryInput" placeholder="Ask me anything..." autocomplete="off">
+            <button id="submitBtn">Ask</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Searching the web and generating your answer...</p>
+        </div>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="result-container" id="resultContainer">
+            <h2>Answer:</h2>
+            <div id="result"></div>
+        </div>
+        
+        <div class="history" id="historyContainer">
+            <h2>Recent Queries</h2>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        const queryInput = document.getElementById('queryInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingElement = document.getElementById('loading');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultElement = document.getElementById('result');
+        const errorElement = document.getElementById('error');
+        const historyList = document.getElementById('historyList');
+        const historyContainer = document.getElementById('historyContainer');
+        
+        // Store query history
+        let queryHistory = [];
+        
+        // Handle form submission
+        submitBtn.addEventListener('click', handleSubmit);
+        queryInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSubmit();
+            }
+        });
+        
+        async function handleSubmit() {
+            const query = queryInput.value.trim();
+            
+            if (!query) {
+                showError('Please enter a question');
+                return;
+            }
+            
+            // Clear previous results and errors
+            hideError();
+            resultContainer.style.display = 'none';
+            
+            // Show loading indicator
+            loadingElement.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            try {
+                // Send query to the backend
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to get response');
+                }
+                
+                // Display result
+                resultElement.textContent = data.answer;
+                resultContainer.style.display = 'block';
+                
+                // Add to history
+                addToHistory(query, data.answer);
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'An error occurred while processing your request');
+            } finally {
+                // Hide loading indicator
+                loadingElement.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+        
+        function showError(message) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        function hideError() {
+            errorElement.style.display = 'none';
+        }
+        
+        function addToHistory(query, answer) {
+            // Add to beginning of history
+            queryHistory.unshift({ query, answer });
+            
+            // Limit history to 5 items
+            if (queryHistory.length > 5) {
+                queryHistory.pop();
+            }
+            
+            // Update history display
+            updateHistoryDisplay();
+        }
+        
+        function updateHistoryDisplay() {
+            if (queryHistory.length === 0) {
+                historyContainer.style.display = 'none';
+                return;
+            }
+            
+            historyContainer.style.display = 'block';
+            historyList.innerHTML = '';
+            
+            queryHistory.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                historyItem.innerHTML = `
+                    <div class="history-query">${item.query}</div>
+                    <div class="history-answer">${item.answer}</div>
+                `;
+                
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        // Initialize
+        updateHistoryDisplay();
+    </script>
+</body>
+</html>
+```
+
+### step 3: switch npm run dev to frontend
+
+change line 13 on `package.json` 
+ ```json
+ "dev": "tsx src/index.ts",
+```
+
+run `npm run dev` in terminal to test it out
+
+## 🚀 Part 7: Deploy to Zeabur (15 minutes)
 
 Now let's deploy your agent to the cloud!
 
@@ -793,7 +1376,7 @@ Now let's deploy your agent to the cloud!
 
 
 
-### Step 6: Access Your Agent
+### Step 8: Access Your Agent
 
 Your agent is now live! Zeabur provides a URL like:
 ```
