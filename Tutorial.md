@@ -1348,6 +1348,4 @@ Your agent is now live! Zeabur provides a URL like:
 https://web-search-ai-agent-xxxxx.zeabur.app
 ```
 
-**Note**: For CLI agents, you'd typically access via SSH or convert to an API (see bonus section below).
-
 ---
