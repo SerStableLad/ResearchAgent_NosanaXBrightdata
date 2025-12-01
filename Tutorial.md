@@ -124,7 +124,7 @@ This creates a `package.json` file with default settings.
 
 ```bash
 # Core dependencies
-npm install @langchain/core langchain axios dotenv
+npm install @langchain/core langchain axios dotenv express
 
 # Development dependencies
 npm install -D typescript @types/node tsx
@@ -181,7 +181,8 @@ Replace the contents of `tsconfig.json` with:
 ```bash
 # Create source folder
 mkdir src
-mkdir toolbox
+mkdir src/toolbox
+mkdir public
 
 # Create main files
 # Agent.ts - This is the main orchestrator of the application.
@@ -195,6 +196,8 @@ touch src/llm.ts
 touch src/toolbox/scraper.ts
 touch src/tools.ts
 touch src/agent.ts
+touch src/server.ts
+Touch public/index.html
 
 # Create environment file
 touch .env
@@ -1285,9 +1288,9 @@ app.listen(PORT, () => {
 
 ### step 3: switch npm run dev to frontend
 
-change line 13 on `package.json` 
+change line 6 on `package.json` 
  ```json
- "dev": "tsx src/index.ts",
+ "dev": "tsx src/server.ts",
 ```
 
 run `npm run dev` in terminal to test it out
@@ -1297,19 +1300,48 @@ run `npm run dev` in terminal to test it out
 Now let's deploy your agent to the cloud!
 
 ### Step 1: Create Zeabur Account
-
-### Step 4: Deploy on Zeabur
-
-1. Go to https://dash.zeabur.com
-2. Click **"New Project"**
-3. Choose **"Deploy from Git"**
-4. Select your repository: `web-search-ai-agent`
-5. Zeabur auto-detects the Dockerfile ✨
-6. Click **"Deploy"**
+use the link below to create an account and get $5 credit:
+https://zeabur.com/events?code=BUILDERS26
 
 
+### Step 2: install on Zeabur on your vibe coding tool
+1. click on the extension icon either on the top or the left sidebar of your folder structure
 
-### Step 8: Access Your Agent
+<img width="514" height="1046" alt="image" src="https://github.com/user-attachments/assets/9a704969-f4a2-489b-b6d6-d39237601c9f" />
+
+<img width="762" height="556" alt="image" src="https://github.com/user-attachments/assets/d1c1b97a-84df-4669-ac80-d01b19f4ae9b" />
+
+2. Search for "Zeabur" and install the extension 
+
+<img width="1045" height="457" alt="Screenshot 2025-12-01 at 2 22 34 PM" src="https://github.com/user-attachments/assets/19c06e56-2ca2-4b15-a24e-f582c4406135" />
+
+
+3. Navigate to zeabur extension and click deploy
+<img width="572" height="980" alt="image" src="https://github.com/user-attachments/assets/168b8018-0f05-4c31-b3bd-ba8622b63e95" />
+
+4. It would bring you to the zeabur website and deploy the website for you. 
+
+<img width="754" height="686" alt="Screenshot 2025-12-01 at 2 25 23 PM" src="https://github.com/user-attachments/assets/c8e03be2-e392-4283-85a4-bbcd67bbb7b1" />
+
+
+5. You woud be asked to create a new project and the location of the server. Chose a new project and select the server nearest to you
+
+
+6. Once you are done, navigate to the variables page and add the content of your `.env`. 
+
+<img width="1660" height="954" alt="image" src="https://github.com/user-attachments/assets/cd963125-1440-41e1-bce1-346b88ab87b4" />
+<img width="2344" height="692" alt="image" src="https://github.com/user-attachments/assets/14109e9c-8ce7-4ad4-a0cf-8f6ae4a93d49" />
+<img width="2346" height="1002" alt="image" src="https://github.com/user-attachments/assets/081b3744-243d-4c8a-a388-15fe94ebc58c" />
+
+
+7. Head back to 'Overview' tab to monitor the deployment. if it fails you might need to hit the 'restart' button to rerun the deployment. 
+Once it is successful, you may view your live app by clicking on the url provided.
+
+<img width="1166" height="690" alt="Screenshot 2025-12-01 at 2 33 43 PM" src="https://github.com/user-attachments/assets/84e80478-0d64-481d-bf40-ab184388eefa" />
+
+
+
+### Step 3: Access Your Agent
 
 Your agent is now live! Zeabur provides a URL like:
 ```
