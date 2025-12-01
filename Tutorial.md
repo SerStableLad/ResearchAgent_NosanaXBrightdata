@@ -676,18 +676,17 @@ Now we'll add web scraping capabilities using BrightData.
 1. Copy the API from the playground 
 <img width="1365" height="474" alt="Screenshot 2025-11-24 at 7 32 24 PM" src="https://github.com/user-attachments/assets/5c7cc184-160a-480c-9dc4-f64aece857f8" />
 
-2. Add to your `.env` file:
-
+2. Replace line 6 of your `.env` file:
 ```bash
 # BrightData Configuration
-BRIGHTDATA_API_TOKEN= [API here]
+BRIGHTDATA_API_TOKEN=your-brightdata-token-here
 ```
 
 
 
 ### Step 6: Create Scraper Class
 
-Create `src/scraper.ts`:
+add in the code below in `src/scraper.ts`:
 
 ```typescript
 import axios from 'axios';
