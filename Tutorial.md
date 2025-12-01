@@ -726,124 +726,139 @@ export class WebSearchTool extends Tool {
 This is where everything comes together!
 
 ### Step 1: edit the Agent Class 
+Edit the Agent Class to include the tools we just created:
 
-Remove // comment this in `src/agent.ts`:
+In line 2, import in the file we created
+```typescript
+import { WebSearchTool } from './tools';
+import { BrightDataScraper } from './toolbox/scraper';
+```
 
+In line 5 to 13 , `Export class  WebSearchAgent`, replace it entirely to call the scraper and search tool
+
+```Typescript
+export class WebSearchAgent {
+  private llm: NosanaLLM;
+  private searchTool: WebSearchTool;
+
+  constructor(nosanaUrl: string, brightdataToken: string, model?: string) {
+    this.llm = new NosanaLLM(nosanaUrl, model);
+    const scraper = new BrightDataScraper(brightdataToken);
+    this.searchTool = new WebSearchTool(scraper);
+  }
+
+```
+
+Remove / comment out line 25 to 27 entirely as want to add more steps before getting the bot to answer
 ```typescript
     // Always answer directly without search (tools disabled) 
     console.log('📝 Answering directly without search (tools disabled)...');
     return await this.llm.generate(userQuery);
 ```
 
-Add in / uncomment this in `src/agent.ts`:
+Replace the above with the code below:
 
 ```typescript
-      // Step 1: Determine if we need to search
-//     const needsSearch = await this.shouldSearch(userQuery);
-//     console.log(`💡 Search needed: ${needsSearch ? 'YES' : 'NO'}`);
-    
-//     if (!needsSearch) {
-//       console.log('📝 Answering directly without search...');
-//       return await this.llm.generate(userQuery);
-//     }
 
-//     // Step 2: Extract search query
-//     console.log('🔍 Determining what to search for...');
-//     const searchQuery = await this.extractSearchQuery(userQuery);
-//     console.log(`🔑 Extracted search query: "${searchQuery}"`);
+    // Step 1: Determine if we need to search
+    const needsSearch = await this.shouldSearch(userQuery);
+    console.log(`💡 Search needed: ${needsSearch ? 'YES' : 'NO'}`);
     
-//     // Validate the extracted search query
-//     if (!searchQuery || typeof searchQuery !== 'string' || searchQuery.trim().length === 0) {
-//       console.error('❌ Invalid search query extracted:', searchQuery);
-//       return 'Error: Could not extract a valid search query.';
-//     }
-    
-//     // Step 3: Perform web search
-//     console.log(`🚀 Executing web search...`);
-//     const searchResults = await this.searchTool._call(searchQuery.trim());
-//     console.log(`🏁 Web search completed`);
-    
-//     // Log the raw search results for debugging
-//     console.log(`📄 Raw search results preview: ${searchResults.substring(0, 100)}...`);
-    
-//     // Step 4: Generate answer based on search results
-//     console.log('🧠 Generating answer from search results...');
-//     const finalAnswer = await this.generateAnswer(userQuery, searchResults);
-//     return finalAnswer;
-//   }
+    if (!needsSearch) {
+      console.log('📝 Answering directly without search...');
+      return await this.llm.generate(userQuery);
+    }
 
-//   private async shouldSearch(query: string): Promise<boolean> {
-//     console.log(`📋 Evaluating if search is needed for: "${query}"`);
+    // Step 2: Extract search query
+    console.log('🔍 Determining what to search for...');
+    const searchQuery = await this.extractSearchQuery(userQuery);
+    console.log(`🔑 Extracted search query: "${searchQuery}"`);
     
-//     const prompt = `Does this question require searching the web for current information? Answer only YES or NO.
+    // Validate the extracted search query
+    if (!searchQuery || typeof searchQuery !== 'string' || searchQuery.trim().length === 0) {
+      console.error('❌ Invalid search query extracted:', searchQuery);
+      return 'Error: Could not extract a valid search query.';
+    }
     
-// Question: ${query}
-
-// Answer:`;
-
-//     const response = await this.llm.generate(prompt);
+    // Step 3: Perform web search
+    console.log(`🚀 Executing web search...`);
+    const searchResults = await this.searchTool._call(searchQuery.trim());
+    console.log(`🏁 Web search completed`);
     
-//     const result = response.toLowerCase().includes('yes');
-//     console.log(`📊 Evaluation result: ${result ? 'SEARCH REQUIRED' : 'DIRECT ANSWER'}`);
+    // Log the raw search results for debugging
+    console.log(`📄 Raw search results preview: ${searchResults.substring(0, 100)}...`);
     
-//     return result;
-//   }
+    // Step 4: Generate answer based on search results
+    console.log('🧠 Generating answer from search results...');
+    const finalAnswer = await this.generateAnswer(userQuery, searchResults);
+    return finalAnswer;
+  }
 
-//   private async extractSearchQuery(query: string): Promise<string> {
-//     console.log(`📋 Extracting search query from: "${query}"`);
+  private async shouldSearch(query: string): Promise<boolean> {
+    console.log(`📋 Evaluating if search is needed for: "${query}"`);
     
-//     const prompt = `Extract a concise search query (3-6 words) from this question:
-
-// Question: ${query}
-
-// Search query:`;
-
-//     console.log(`📤 Sending extraction prompt to LLM...`);
-//     const response = await this.llm.generate(prompt);
-//     console.log(`📥 Received LLM response: "${response}"`);
+    const prompt = `Does this question require searching the web for current information? Answer only YES or NO.
     
-//     const result = response.trim();
-//     console.log(`🔑 Final extracted search query: "${result}"`);
-    
-//     return result;
-//   }
+Question: ${query}
 
-//   private async generateAnswer(originalQuery: string, searchResults: string): Promise<string> {
-//     console.log(`📋 Generating final answer for: "${originalQuery}"`);
-//     console.log(`📎 With search results length: ${searchResults.length} characters`);
-    
-//     // Check if we have an error message instead of results
-//     if (searchResults.startsWith('Error:') || searchResults === 'No results found.') {
-//       console.warn('⚠️ Search returned an error or no results');
-//       return `I couldn't find information about "${originalQuery}" due to a search error. Please try rephrasing your question.`;
-//     }
-    
-//     const prompt = `Based on the following search results, answer the user's question accurately and concisely.
+Answer:`;
 
-// User Question: ${originalQuery}
-
-// Search Results:
-// ${searchResults}
-
-// Answer:`;
-
-//     const result = await this.llm.chat([
-//       { role: 'system', content: 'You are a helpful AI assistant that answers questions based on search results. Be concise and accurate.' },
-//       { role: 'user', content: prompt }
-//     ]);
+    const response = await this.llm.generate(prompt);
     
-//     console.log(`📥 Received final answer from LLM (${result.length} characters)`);
+    const result = response.toLowerCase().includes('yes');
+    console.log(`📊 Evaluation result: ${result ? 'SEARCH REQUIRED' : 'DIRECT ANSWER'}`);
     
-//     return result;
+    return result;
+  }
+
+  private async extractSearchQuery(query: string): Promise<string> {
+    console.log(`📋 Extracting search query from: "${query}"`);
+    
+    const prompt = `Extract a concise search query (3-6 words) from this question:
+
+Question: ${query}
+
+Search query:`;
+
+    console.log(`📤 Sending extraction prompt to LLM...`);
+    const response = await this.llm.generate(prompt);
+    console.log(`📥 Received LLM response: "${response}"`);
+    
+    const result = response.trim();
+    console.log(`🔑 Final extracted search query: "${result}"`);
+    
+    return result;
+  }
+
+  private async generateAnswer(originalQuery: string, searchResults: string): Promise<string> {
+    console.log(`📋 Generating final answer for: "${originalQuery}"`);
+    console.log(`📎 With search results length: ${searchResults.length} characters`);
+    
+    // Check if we have an error message instead of results
+    if (searchResults.startsWith('Error:') || searchResults === 'No results found.') {
+      console.warn('⚠️ Search returned an error or no results');
+      return `I couldn't find information about "${originalQuery}" due to a search error. Please try rephrasing your question.`;
+    }
+    
+    const prompt = `Based on the following search results, answer the user's question accurately and concisely.
+
+User Question: ${originalQuery}
+
+Search Results:
+${searchResults}
+
+Answer:`;
+
+    const result = await this.llm.chat([
+      { role: 'system', content: 'You are a helpful AI assistant that answers questions based on search results. Be concise and accurate.' },
+      { role: 'user', content: prompt }
+    ]);
+    
+    console.log(`📥 Received final answer from LLM (${result.length} characters)`);
+    
+    return result;
 ```
 
-
-
-### Step 2: edit the index Class 
-add in / uncomment this on line 15 in `src/index.ts`
-```
-const brightdataToken = process.env.BRIGHTDATA_API_TOKEN;
-```
 
 
 **Agent Flow Explained:**
