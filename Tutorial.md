@@ -181,6 +181,7 @@ Replace the contents of `tsconfig.json` with:
 ```bash
 # Create source folder
 mkdir src
+mkdir toolbox
 
 # Create main files
 # Agent.ts - This is the main orchestrator of the application.
@@ -191,7 +192,7 @@ mkdir src
 
 touch src/index.ts
 touch src/llm.ts
-touch src/tools/scraper.ts
+touch src/toolbox/scraper.ts
 touch src/tools.ts
 touch src/agent.ts
 
@@ -221,23 +222,16 @@ dist/
 
 ### Step 8: Add NPM Scripts
 
-Update `package.json` to include these scripts:
+Replace line 5 to 7 `package.json` to the below. 
+This allows us to testrun the code without any frontend for now.
 
 ```json
-{
-  "name": "web-search-ai-agent",
-  "version": "1.0.0",
-  "description": "AI agent with web search capabilities",
-  "main": "dist/index.js",
+
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },
-  "keywords": ["ai", "agent", "langchain", "typescript"],
-  "author": "Your Name",
-  "license": "MIT"
-}
 ```
 
 **Scripts explained:**
@@ -279,13 +273,12 @@ Now we'll connect to a self-hosted LLM using Nosana's GPU infrastructure.
 
 
 ### Step 4: Store Credentials
-copy the URL where it says "Ollama is running"
-
 Add to your `.env` file:
+copy the URL where it says "Ollama is running" and replace the dummy url after NOSANA_OLLAMA_URL
 
 ```bash
 # Nosana Configuration
-NOSANA_OLLAMA_URL=[Paste the URL here]/
+NOSANA_OLLAMA_URL=https://xxxxx.nosana.network
 NOSANA_MODEL=llama3.1:8b
 ```
 
@@ -464,7 +457,7 @@ export class NosanaLLM {
 - ** stream**: token streaming. character by character - this does not work for terminal 
 
 
-Create `src/agent.ts`:
+Add in the below content for  `src/agent.ts`:
 
 ```typescript
 import { NosanaLLM } from './llm';
@@ -596,6 +589,12 @@ export class WebSearchAgent {
   }
 }
 ```
+
+Add in the below content for  `src/index.ts`:
+
+
+
+
 
 ### Step 6: Test Your LLM Connection
 run `npm run dev` in the terminal 
